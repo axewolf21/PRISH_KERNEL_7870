@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Setting Up Environment"
 echo ""
-export CROSS_COMPILE=/home/neel0210/Desktop/toolchain/gcc-linaro-7.5.0/bin/aarch64-linux-gnu-
+export CROSS_COMPILE=/media/neel/e839799c-2f22-4a36-9068-b6584358d51f/neel/toolchain/gcc-linaro-7.5.0/bin/aarch64-linux-gnu-
 export ARCH=arm64
 export ANDROID_MAJOR_VERSION=q
 export PLATFORM_VERSION=10.0.0
@@ -49,7 +49,7 @@ rm ./Anykernel/dtb
 echo "=========="
 echo "Building DTB"
 echo "=========="
-make exynos7870-j7velte_defconfig
+make goku_defconfig
 DTS=arch/arm64/boot/dts
 make exynos7870-j7velte_sea_open_00.dtb exynos7870-j7velte_sea_open_01.dtb exynos7870-j7velte_sea_open_03.dtb
 ./tools/dtbtool $DTS/ -o ./arch/arm64/boot/dtb
@@ -58,8 +58,8 @@ rm ./arch/arm64/boot/dts/*.dtb
 echo "============="
 echo "Building zImage"
 echo "============="
-make exynos7870-j7velte_defconfig
-make -j8
+make goku_defconfig
+make -j64
 echo "Kernel Compiled"
 echo ""
 cp -r ./arch/arm64/boot/Image ./AIK/split_img/boot.img-zImage
