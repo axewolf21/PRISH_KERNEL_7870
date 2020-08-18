@@ -1,107 +1,106 @@
 #!/bin/bash
 echo "Setting Up Environment"
 echo ""
-export CROSS_COMPILE=/media/neel/e839799c-2f22-4a36-9068-b6584358d51f/neel/toolchain/gcc-linaro-7.5.0/bin/aarch64-linux-gnu-
+export CROSS_COMPILE=../toolchain/gcc-linaro-7.5.0/bin/aarch64-linux-gnu-
 export ARCH=arm64
 export ANDROID_MAJOR_VERSION=q
 export PLATFORM_VERSION=10.0.0
 export USE_CCACHE=1
-#export this to name your kernel, you need to disable the localversion from defconfig to use this
-#export CONFIG_LOCALVERSION=PRISH Q J701X
+chmod a+x AnyKernel/zip.sh # if exists ofc
 clear
-echo "Select"
-echo "1 = Clean Build"
-echo "2 = Start Build"
-echo "3 = AIK+ZIP"
-echo "4 = Anykernel"
-echo "5 = Exit"
-read n
-#clear
-
-if [ $n -eq 1 ]; then
-
+CACHE()
+{
+rm ./arch/arm64/boot/Image
+rm ./arch/arm64/boot/Image.gz
+rm Image
+rm dtb
+rm *.zip
+rm ./arch/arm64/boot/dts/*.dtb
+rm ./AIK/split_img/boot.img-dt
+rm ./AIK/split_img/boot.img-zImage
+}
+CLEAN()
+{
 make clean && make mrproper
-rm ./arch/arm64/boot/Image
-rm ./arch/arm64/boot/Image.gz
-rm ./Image
-rm ./dtb
-rm ./arch/arm64/boot/dtb
-rm ./arch/arm64/boot/dts/*.dtb
-rm ./AIK/split_img/boot.img-dt
-rm ./AIK/split_img/boot.img-zImage
-rm ./Anykernel/Image
-rm ./Anykernel/dtb
-#clear
-fi
-
-if [ $n -eq 2 ]; then
-rm ./arch/arm64/boot/Image
-rm ./arch/arm64/boot/Image.gz
-rm ./Image
-rm ./dtb
-rm ./arch/arm64/boot/dtb
-rm ./arch/arm64/boot/dts/*.dtb
-rm ./AIK/split_img/boot.img-dt
-rm ./AIK/split_img/boot.img-zImage
-rm ./Anykernel/Image
-rm ./Anykernel/dtb
-#clear
-echo "=========="
+}
+BUILD()
+{
+echo "#"
 echo "Building DTB"
-echo "=========="
-make goku_defconfig
+echo "#"
+make j7velte_defconfig
 DTS=arch/arm64/boot/dts
 make exynos7870-j7velte_sea_open_00.dtb exynos7870-j7velte_sea_open_01.dtb exynos7870-j7velte_sea_open_03.dtb
-./tools/dtbtool $DTS/ -o ./arch/arm64/boot/dtb
+./tools/dtbtool "$DTS"/ -o dtb
 echo "Cleanup DTB"
-rm ./arch/arm64/boot/dts/*.dtb
-echo "============="
+rm ./"$DTS"/*.dtb
+echo "#"
 echo "Building zImage"
-echo "============="
-make goku_defconfig
-make -j64
-echo "Kernel Compiled"
-echo ""
-cp -r ./arch/arm64/boot/Image ./AIK/split_img/boot.img-zImage
-cp -r ./dtb ./AIK/split_img/boot.img-dt
-cp -r ./arch/arm64/boot/Image ./Anykernel/Image
-cp -r ./arch/arm64/boot/dtb ./Anykernel/dtb
-#clear
-fi
-
-if [ $n -eq 3 ]; then
-echo "============="
-echo "MAKING FLASHABLE ZIP"
-echo "============="
+echo "#"
+make j7velte_defconfig
+# REMINDER: [DISABLE FROM CONFIG OR IT WILL OVERLAP]
+make CONFIG_LOCALVERSION= ZEUS -Q v1 J701X
+CPU=`nproc --all`
+make -j"$CPU"
+cp ./arch/arm64/boot/Image ./Image
+}
+AIK()
+{
+echo "#"
+echo "Making Image-AIK"
+echo "#"
 rm ./AIK/split_img/boot.img-dt
 rm ./AIK/split_img/boot.img-zImage
-cp -r ./arch/arm64/boot/Image ./Image
-cp -r ./arch/arm64/boot/Image ./AIK/split_img/boot.img-zImage
-cp -r ./arch/arm64/boot/dtb ./AIK/split_img/boot.img-dt
+rm image-new.img
+cp ./arch/arm64/boot/Image ./Image
+cp ./arch/arm64/boot/Image ./AIK/split_img/boot.img-zImage
+cp dtb ./AIK/split_img/boot.img-dt
 ./AIK/repackimg.sh
-cp -r ./AIK/image-new.img ./ZIP/NEEL/nxt/boot.img
-cd ZIP
-./neel.sh
+cp ./AIK/image-new.img ./Flashable/boot.img
+cd Flashable
+./zip.sh
 cd ..
-cp -r ./ZIP/kernel.zip ./kernel_p_J7VELTE.zip
-#clear
-fi
-
-if [ $n -eq 4 ]; then
-echo "============="
-echo "ADDING IN ANYKERNEL"
-echo "============="
-cp -r ./arch/arm64/boot/Image ./AK/Image
-cp -r ./arch/arm64/boot/dtb ./AK/dtb
-cd AK
-./test.sh
+}
+ANYKERNEL()
+{
+echo "#"
+echo "AnyKernel"
+echo "#"
+cd AnyKernel
+cp ../dtb ./
+cp ../arch/arm64/boot/Image ./
+./zip.sh
 cd ..
-cp -r ./AK/kernel.zip ./kernel_p_J7VELTE.zip
-#clear
-fi
-
-if [ $n -eq 5 ]; then
+}
+echo "Select"
+echo "1 = Clear Cache"
+echo "2 = Dirty Build"
+echo "3 = Clean Build"
+echo "4 = AIK"
+echo "5 = AnyKernel"
+echo "6 = Exit"
+read n
+if [ $n -eq 1 ]; then
+CACHE
+CLEAN
+clear
+elif [ $n -eq 2 ]; then
+CACHE
+clear
+BUILD
+elif [ $n -eq 3 ]; then
+CACHE
+clear
+CLEAN
+clear
+BUILD
+echo "##"
+echo "Kernel Compiled"
+echo "##"
+elif [ $n -eq 4 ]; then
+AIK
+elif [ $n -eq 5 ]; then
+ANYKERNEL
+elif [ $n -eq 6 ]; then
 exit
 fi
-
-
