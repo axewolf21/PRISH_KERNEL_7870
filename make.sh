@@ -39,7 +39,7 @@ echo "Building zImage"
 echo "#"
 make j7velte_defconfig
 # REMINDER: [DISABLE FROM CONFIG OR IT WILL OVERLAP]
-make CONFIG_LOCALVERSION= ZEUS -Q v1 J701X
+make CONFIG_LOCALVERSION=" ZEUS -Q v1 J701X"
 CPU=`nproc --all`
 make -j"$CPU"
 cp ./arch/arm64/boot/Image ./Image
